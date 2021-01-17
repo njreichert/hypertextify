@@ -19,7 +19,8 @@ def openFile(fileName):
     inputFile = open(fileName, "rt")
     
     for line in inputFile:
-        fileText.append(line)
+        strippedLine = line.rstrip('\n') # Remove all newlines.
+        fileText.append(strippedLine)
     
     inputFile.close()
 
@@ -29,4 +30,4 @@ def openFile(fileName):
 f = openFile("test.md")
 
 for line in f:
-    print("{", line, "}")
+    print("{", line, "}", sep="")
