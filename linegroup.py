@@ -11,20 +11,42 @@ from enum import Enum, auto
 """
 A container of strings or inline elements that will be rendered as a part.
 """
-# TODO
+class ElementContainer:
+    """
+    Constructor.
+
+    Parameters: 
+    contents (expects list of some sort)
+    format (expects FormatType)
+    """
+    def __init__(self, contents, containerType):
+        self.contents = contents
+        self.containerType = containerType
+
+    """
+    Formats container into the relevant HTML tags.
+
+    Return value: The HTML tags, as a string.
+    """
+    def __str__(self):
+        formattedText = "" # Container for format.
+        for item in self.contents:
+            formattedText += item # TODO: Does this format as expected?
+        
+        # containerType is a format string.
+        return self.containerType.format(text=formattedText)
 
 """
 Contains an inline-formatted string.
 """
-# TODO
+class inlineType
 
 """
-Represents different types of text to be implemented.
-
+Represents different types of "container tags" to be implemented.
 """
 class FormatType(Enum):
     PARAGRAPH = "<p>\n{text}\n</p>"
-    CODEBLOCK = "<pre>\n{text}\n<code>"
+    CODEBLOCK = "<pre><code>\n{text}\n</code></pre>"
     QUOTE = "<blockquote>\n{text}\n</blockquote>"
     ORDEREDLIST = "<ol>\n{text}\n</ol>"
     UNORDEREDLIST = "<ul>\n{text}\n</ul>"
@@ -42,9 +64,8 @@ Represents different types of inline elements that can be
 added into the file.
 """
 class InlineType(Enum):
-    LINK = "<a>{text}</a>"
+    LINK = "<a href={link}>{text}</a>"
     INLINECODE = "<code>{text}</code>"
     BOLD = "<strong>{text}</strong>"
     ITALICS = "<em>{text}</em>"
-
-
+    IMAGE = "<img src={link}>" # TODO Add alt text.
