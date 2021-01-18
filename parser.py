@@ -15,8 +15,27 @@ of what it is searching for.
 """
 class ParserMode(Enum):
     BLANK = auto() # If there is nothing parsed yet.
-    TEXT = auto() # If the last read datatype is a paragraph or header.
+    TEXT = auto() # Paragraph or header.
     QUOTE = auto()
     HEADER = auto()
     LIST = auto()
     LINK = auto()
+
+
+
+"""
+Creates a list of partly-parsed ElementContainers that can be
+parsed for inline elements.
+
+Parameters:
+inputText: The text to be parsed. Expects a list of strings
+    representing each line.
+
+Return Value:
+parsedList: The list of ElementContainers.
+"""
+def createContainerList(inputText):
+    mode = ParserMode.BLANK # Tells the parser what to do next.
+
+    for line in range(len(inputText)):
+        mode = classifyString(line)
