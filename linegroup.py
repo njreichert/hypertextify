@@ -16,12 +16,21 @@ class ElementContainer:
     Constructor.
 
     Parameters: 
-    contents (expects list of some sort)
-    format (expects FormatType)
+    contents: A list of any type.
+    containerType: expects FormatType
     """
     def __init__(self, contents, containerType):
         self.contents = contents
         self.containerType = containerType
+
+    """
+    Appends an element to contents.
+
+    Parameters:
+    item: the item to append to contents.
+    """
+    def append(self, item):
+        self.contents.append(item)
 
     """
     Formats container into the relevant HTML tags.
@@ -37,14 +46,36 @@ class ElementContainer:
         return self.containerType.format(text=formattedText)
 
 """
-Contains an inline-formatted string.
+Special type of ElementContainer that also holds linking information.
+
+Extends: ElementContainer.
 """
-class inlineType
+class LinkContainer(ElementContainer):
+    """
+    Constructor.
+
+    Parameters:
+    contents: Usually linktext or alt-text.  # TODO: Redefine into list.
+    containerType: Expects LinkType.
+    link: The link in question.
+    """
+    def __init__(self, contents, containerType, link):
+        super().__init__(contents, containerType)
+        self.link = link
+
+    """
+    Formats as string.
+
+    Return value: The string in question.
+    """
+    def __str__(self):
+        return str.format
+
 
 """
 Represents different types of "container tags" to be implemented.
 """
-class FormatType(Enum):
+class BlockType(Enum):
     PARAGRAPH = "<p>\n{text}\n</p>"
     CODEBLOCK = "<pre><code>\n{text}\n</code></pre>"
     QUOTE = "<blockquote>\n{text}\n</blockquote>"
@@ -64,8 +95,15 @@ Represents different types of inline elements that can be
 added into the file.
 """
 class InlineType(Enum):
-    LINK = "<a href={link}>{text}</a>"
+    
     INLINECODE = "<code>{text}</code>"
     BOLD = "<strong>{text}</strong>"
     ITALICS = "<em>{text}</em>"
-    IMAGE = "<img src={link}>" # TODO Add alt text.
+    
+"""
+Represents special inline types that have more information
+associated with them.
+"""
+class LinkType(Enum):
+    LINK = "<a href=\"{link}\">{text}</a>"
+    IMAGE = "<img src=\"{link}\" alt=\"{text}\">"
