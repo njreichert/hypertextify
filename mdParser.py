@@ -27,35 +27,35 @@ class LineDescriptor(Enum):
     LINK = auto() # some form of link.
     IMG = auto() # link, but with a '!' prepended.
     CODE = auto() # Codeblock.
+
+"""
+Regexes denoting Block-level elements.
+"""
+matchExprs = {
+    # Blank Regex attrib: https://stackoverflow.com/a/52267453
+    LineDescriptor.BLANK:"^$", # Match nothing. Unused.
+    LineDescriptor.QUOTE:"> .+", # Match a quote, space, then 1 or more chars.
+    LineDescriptor.HEADER:"^#{1,6} .+", # 1-6 hash signs, space, and 1+ chars.
+    LineDescriptor.H1LINE:"^=+$", # ONLY 1 or more '='
+    LineDescriptor.H2LINE:"^-+$", # 1 or more -'s
+    LineDescriptor.LIST:"^[-\+\*] .+", # Match any line starting with "-+* "
     
-    """
-    Regexes denoting Block-level elements.
-    """
-    matchExprs = {
-        # Blank Regex attrib: https://stackoverflow.com/a/52267453
-        BLANK:"^$", # Match nothing. Unused.
-        QUOTE:"> .+", # Match a quote, space, then 1 or more chars.
-        HEADER:"^#{1,6} .+", # 1-6 hash signs, space, and 1+ chars.
-        H1LINE:"^=+$", # ONLY 1 or more '='
-        H2LINE:"^-+$", # 1 or more -'s
-        LIST:"^[-\+\*] .+", # Match any line starting with "-+* "
-        
-        # Either of these can occur as the only text on the line, 
-        # and should be dealt with as a block. Otherwise, inline.
-        LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
-        IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
+    # Either of these can occur as the only text on the line, 
+    # and should be dealt with as a block. Otherwise, inline.
+    LineDescriptor.LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
+    LineDescriptor.IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
 
-        CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
-        TEXT:"." # All characters. A last resort.
-    }
+    LineDescriptor.CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
+    LineDescriptor.TEXT:"." # All characters. A last resort.
+}
 
-    """
-    Inline Element regexes.
-    """
-    inlineExprs = {
-        LINK:"\[.*\]\(.*\)", # Matches any text enclosed by "[]()".
-        IMG:"!\[.*\]\(.*\)" # Matches LINK, with a ! prepended.
-    }
+"""
+Inline Element regexes.
+"""
+inlineExprs = {
+    LineDescriptor.LINK:"\[.*\]\(.*\)", # Matches any text enclosed by "[]()".
+    LineDescriptor.IMG:"!\[.*\]\(.*\)" # Matches LINK, with a ! prepended.
+}
 
 """
 Determines the LineDescriptor best associated with the given string.
@@ -67,7 +67,7 @@ Return Value:
 classification: Of type LineDescriptor
 """
 def classifyString(text):
-    for descriptor, expr in LineDescriptor.matchExprs:
+    for descriptor, expr in matchExprs.items():
         if re.fullmatch(expr, text.strip()):
             return descriptor
     
