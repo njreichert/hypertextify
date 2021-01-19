@@ -160,7 +160,8 @@ def createContainerList(inputBuffer):
             linePointer += 1
             continue
 
-        if (currentLineType == LineDescriptor.IMG or LineDescriptor.LINK):
+        if (currentLineType == LineDescriptor.IMG or \
+            currentLineType == LineDescriptor.LINK):
             if (previousLineType == LineDescriptor.TEXT):
                 # Deal with it when doing inline elements.
                 lineList.append(inputBuffer[linePointer])
