@@ -39,10 +39,12 @@ class LineDescriptor(Enum):
         H1LINE:"^=+$", # ONLY 1 or more '='
         H2LINE:"^-+$", # 1 or more -'s
         LIST:"^[-\+\*] .+", # Match any line starting with "-+* "
+        
         # Either of these can occur as the only text on the line, 
-        # and should be dealt with accordingly.
+        # and should be dealt with as a block. Otherwise, inline.
         LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
         IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
+
         CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
         TEXT:"." # All characters. A last resort.
     }
@@ -70,6 +72,34 @@ def classifyString(text):
             return descriptor
     
     return None # If we get here, something has gone horribly wrong.
+
+"""
+Grabs the link and alt-text from an image or link string.
+
+Parameters:
+text: The string in question. 
+
+Return values:
+None if classifyString(text) != IMG or LINK
+
+Otherwise...
+link: The link found in the string.
+altText: The alt-text in the string.
+"""
+def extractLink(text):
+
+    # Check for a non-link type.
+    if (classifyString(text) != LineDescriptor.LINK and \
+        classifyString(text) != LineDescriptor.IMG):
+            return None
+
+    # Grab the text inside [these brackets].
+    altText = re.search("?<=\[).*(?=\])", text)[0]
+
+    # Grab the text inside (these parentheses).
+    link = re.search("(?<=\().*(?=\))", text)[1]
+
+    return link, altText
 
 """
 Creates a list of partly-parsed ElementContainers that can be
@@ -104,7 +134,7 @@ def createContainerList(inputBuffer):
             lineList.append(inputBuffer[linePointer])
             linePointer += 1
             continue
-
+    
         if (currentLineType == LineDescriptor.BLANK):
             if (previousLineType == LineDescriptor.TEXT):
                 newElement = ElementContainer(lineList, BlockType.PARAGRAPH)
@@ -132,9 +162,11 @@ def createContainerList(inputBuffer):
                 linePointer += 1
                 continue
 
-            # Otherwise... TODO
-            # link = extractLink(inputBuffer[linePointer])
-            # parsedList.append(LinkContainer())
+            # Otherwise...
+            link, altText = extractLink(inputBuffer[linePointer])
+            parsedList.append(LinkContainer(altText, currentLineType, link))
+            linePointer += 1
+            continue
             
 
 
