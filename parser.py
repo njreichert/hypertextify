@@ -24,6 +24,7 @@ class LineDescriptor(Enum):
     LIST = auto()
     LINK = auto() # some form of link.
     IMG = auto() # link, but with a '!' prepended.
+    CODE = auto() # Codeblock.
     
     """
     Regexes denoting Block-level elements.
@@ -40,6 +41,7 @@ class LineDescriptor(Enum):
         # and should be dealt with accordingly.
         LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
         IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
+        CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
         TEXT:"." # All characters. Probably unused?
     }
 
@@ -50,6 +52,7 @@ class LineDescriptor(Enum):
         LINK:"\[.*\]\(.*\)", # Matches any text enclosed by "[]()".
         IMG:"!\[.*\]\(.*\)" # Matches LINK, with a ! prepended.
     }
+
 
 
 
