@@ -8,7 +8,9 @@ of Markdown format types.
 """
 
 from enum import Enum, auto
-import re # For Regexes.
+from linegroup import BlockType, ElementContainer, LinkContainer
+import re
+from typing import Text # For Regexes.
 
 """
 Denotes the most recent datatype evaluated. Allows it to keep track
@@ -81,17 +83,64 @@ Return Value:
 parsedList: The list of ElementContainers.
 """
 def createContainerList(inputBuffer):
-    mode = LineDescriptor.BLANK # Tells the parser what to do next.
+
+    # Gives the parser context as to what to do with the string. 
+    previousLineType = LineDescriptor.BLANK 
+    currentLineType = LineDescriptor.BLANK
+
+    lineList = []
     parsedList = []
+
     linePointer = 0 # Zero-indexed line number.
 
     while(linePointer < len(inputBuffer)):
-        # Figure out what to do with the current line.
-        mode = classifyString(inputBuffer[linePointer])
+        previousLineType = currentLineType
+        currentLineType = classifyString(inputBuffer[linePointer])
 
-        if (mode == LineDescriptor.BLANK):
+        # Figure out what to do with the current line.
+        if (currentLineType == LineDescriptor.TEXT):
+            # Add to used text, and look for
+            # a "terminator" or more lines of text.
+            lineList.append(inputBuffer[linePointer])
             linePointer += 1
             continue
+
+        if (currentLineType == LineDescriptor.BLANK):
+            if (previousLineType == LineDescriptor.TEXT):
+                newElement = ElementContainer(lineList, BlockType.PARAGRAPH)
+                parsedList.append(newElement)
+                lineList.clear()
+                linePointer += 1
+                continue
+
+            if (previousLineType == LineDescriptor.QUOTE):
+                newElement = ElementContainer(lineList, BlockType.QUOTE)
+                parsedList.append(newElement)
+                lineList.clear()
+                linePointer += 1
+                continue
+
+        if (currentLineType == LineDescriptor.QUOTE):
+            lineList.append(inputBuffer[linePointer])
+            linePointer += 1
+            continue
+
+        if (currentLineType == LineDescriptor.IMG or LineDescriptor.LINK):
+            if (previousLineType == LineDescriptor.TEXT):
+                # Deal with it when doing inline elements.
+                lineList.append(inputBuffer[linePointer])
+                linePointer += 1
+                continue
+
+            # Otherwise... TODO
+            # link = extractLink(inputBuffer[linePointer])
+            # parsedList.append(LinkContainer())
+            
+
+
+
+        
+
 
     return parsedList
     
