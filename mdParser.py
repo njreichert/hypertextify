@@ -167,12 +167,6 @@ def createContainerList(inputBuffer):
             parsedList.append(LinkContainer(altText, currentLineType, link))
             linePointer += 1
             continue
-            
-
-
-
-        
-
 
     return parsedList
     
