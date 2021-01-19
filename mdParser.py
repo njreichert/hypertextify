@@ -46,7 +46,7 @@ matchExprs = {
     LineDescriptor.IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
 
     LineDescriptor.CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
-    LineDescriptor.TEXT:"." # All characters. A last resort.
+    LineDescriptor.TEXT:".+" # All characters. A last resort.
 }
 
 """
@@ -136,6 +136,11 @@ def createContainerList(inputBuffer):
             continue
     
         if (currentLineType == LineDescriptor.BLANK):
+
+            if (previousLineType == LineDescriptor.BLANK):
+                linePointer += 1
+                continue
+
             if (previousLineType == LineDescriptor.TEXT):
                 newElement = ElementContainer(lineList, BlockType.PARAGRAPH)
                 parsedList.append(newElement)
