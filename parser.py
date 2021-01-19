@@ -42,7 +42,7 @@ class LineDescriptor(Enum):
         LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
         IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
         CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
-        TEXT:"." # All characters. Probably unused?
+        TEXT:"." # All characters. A last resort.
     }
 
     """
@@ -53,8 +53,21 @@ class LineDescriptor(Enum):
         IMG:"!\[.*\]\(.*\)" # Matches LINK, with a ! prepended.
     }
 
+"""
+Determines the LineDescriptor best associated with the given string.
 
+Parameters: 
+text: The string to evaluate.
 
+Return Value:
+classification: Of type LineDescriptor
+"""
+def classifyString(text):
+    for descriptor, expr in LineDescriptor.matchExprs:
+        if re.fullmatch(expr, text.strip()):
+            return descriptor
+    
+    return None # If we get here, something has gone horribly wrong.
 
 """
 Creates a list of partly-parsed ElementContainers that can be
@@ -68,7 +81,7 @@ Return Value:
 parsedList: The list of ElementContainers.
 """
 def createContainerList(inputBuffer):
-    mode = ParserMode.BLANK # Tells the parser what to do next.
+    mode = LineDescriptor.BLANK # Tells the parser what to do next.
     parsedList = []
     linePointer = 0 # Zero-indexed line number.
 
@@ -76,7 +89,7 @@ def createContainerList(inputBuffer):
         # Figure out what to do with the current line.
         mode = classifyString(inputBuffer[linePointer])
 
-        if (mode == ParserMode.BLANK):
+        if (mode == LineDescriptor.BLANK):
             linePointer += 1
             continue
 
