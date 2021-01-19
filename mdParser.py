@@ -94,10 +94,10 @@ def extractLink(text):
             return None
 
     # Grab the text inside [these brackets].
-    altText = re.search("?<=\[).*(?=\])", text)[0]
+    altText = re.search("(?<=\[).*(?=\])", text).group()
 
     # Grab the text inside (these parentheses).
-    link = re.search("(?<=\().*(?=\))", text)[1]
+    link = re.search("(?<=\().*(?=\))", text).group()
 
     return link, altText
 
