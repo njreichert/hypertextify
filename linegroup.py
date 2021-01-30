@@ -51,31 +51,6 @@ class ElementContainer:
         return self.containerType.format(self.containerType, \
             text=self.createCleanedString())
 
-"""
-Special Case of ElementContainer for elements that can be implemented
-parametrically (such as <h#> tags).
-
-Extends: ElementContainer.
-"""
-class ParametricContainer(ElementContainer):
-    """
-    contents: Usually linktext or alt-text.  # TODO Redefine into list.
-    containerType: Expects ParametricType.
-    elementParameter: A string to be placed into the tag.
-    """
-    def __init__(self, contents, containerType, elementParameter):
-        super().__init__(contents, containerType)
-        self.elementParameter = elementParameter
-
-    """
-    Build off of super.__str__ to fill in the parts necessary.
-
-    Return value: The string in question.
-    """
-    def __str__(self):
-        str.format(self.__str__, param=self.elementParameter, \
-            endParam=self.elementParameter)
-
 
 """
 Special type of ElementContainer that also holds linking information.
@@ -107,7 +82,9 @@ class LinkContainer(ElementContainer):
 """
 Represents different types of "container tags" to be implemented.
 """
-class BlockType(Enum):
+class ElementType(Enum):
+    NONE = ""
+    ANY = "" # Unused for creating Elements.
     PARAGRAPH = "<p>\n{text}\n</p>"
     CODEBLOCK = "<pre><code>\n{text}\n</code></pre>"
     QUOTE = "<blockquote>\n{text}\n</blockquote>"
@@ -115,13 +92,16 @@ class BlockType(Enum):
     UNORDEREDLIST = "<ul>\n{text}\n</ul>"
     LISTITEM = "<li>\n{text}\n</li>"
     TEXT = "{text}" # For pasting pure HTML.
+    H1 = "<h1>{text}</h1>"
+    H2 = "<h2>{text}</h2>"
+    H3 = "<h3>{text}</h3>"
+    H4 = "<h4>{text}</h4>"
 
 """
 Represents different types of inline elements that can be
 added into the file.
 """
 class InlineType(Enum):
-    
     INLINECODE = "<code>{text}</code>"
     BOLD = "<strong>{text}</strong>"
     ITALICS = "<em>{text}</em>"
@@ -133,9 +113,3 @@ associated with them.
 class LinkType(Enum):
     LINK = "<a href=\"{link}\">{text}</a>"
     IMAGE = "<img src=\"{link}\" alt=\"{text}\">"
-
-"""
-Special Block types that are configurable.
-"""
-class ParametricType(Enum):
-    HEADER = "<h{param}>\n{text}\n</h{endParam}>"

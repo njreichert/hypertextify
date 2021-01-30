@@ -8,70 +8,73 @@ of Markdown format types.
 """
 
 from enum import Enum, auto
-from linegroup import BlockType, ElementContainer, LinkContainer
+from linegroup import *
 import re
 from typing import Text # For Regexes.
-
-"""
-Denotes the most recent datatype evaluated. Allows it to keep track
-of what it is searching for.
-"""
-class LineDescriptor(Enum):
-    BLANK = auto() # If there is nothing parsed yet.
-    TEXT = auto() # Paragraph or header. A last resort
-    QUOTE = auto()
-    HEADER = auto() # Match 
-    H1LINE = auto() # The underline for a header.
-    H2LINE = auto()
-    LIST = auto()
-    LINK = auto() # some form of link.
-    IMG = auto() # link, but with a '!' prepended.
-    CODE = auto() # Codeblock.
 
 """
 Regexes denoting Block-level elements.
 """
 matchExprs = {
     # Blank Regex attrib: https://stackoverflow.com/a/52267453
-    LineDescriptor.BLANK:"^$", # Match nothing. Unused.
-    LineDescriptor.QUOTE:"> .+", # Match a quote, space, then 1 or more chars.
-    LineDescriptor.HEADER:"^#{1,6} .+", # 1-6 hash signs, space, and 1+ chars.
-    LineDescriptor.H1LINE:"^=+$", # ONLY 1 or more '='
-    LineDescriptor.H2LINE:"^-+$", # 1 or more -'s
-    LineDescriptor.LIST:"^[-\+\*] .+", # Match any line starting with "-+* "
+    ElementType.ANY:".",
+    ElementType.NONE:"^$", # Match nothing. Unused.
+    ElementType.QUOTE:"> .+", # Match a quote, space, then 1 or more chars.
+    ElementType.H1:"^# .+", # 1-4 hash signs, space, and 1+ chars.
+    ElementType.H2:"^## .+", # 1-4 hash signs, space, and 1+ chars.
+    ElementType.H3:"^### .+", # 1-4 hash signs, space, and 1+ chars.
+    ElementType.H4:"^#### .+", # 1-4 hash signs, space, and 1+ chars.
+    ElementType.UNORDEREDLIST:"^- .+", # Match any line starting with "- "
     
     # Either of these can occur as the only text on the line, 
     # and should be dealt with as a block. Otherwise, inline.
-    LineDescriptor.LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
-    LineDescriptor.IMG:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
-
-    LineDescriptor.CODE:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
-    LineDescriptor.TEXT:".+" # All characters. A last resort.
+    LinkType.LINK:"^\[.*\]\(.*\)$", # Matches any text enclosed by "[]()".
+    LinkType.IMAGE:"^!\[.*\]\(.*\)$", # Matches LINK, with a ! prepended.
+    
+    ElementType.CODEBLOCK:"^(\t| {4}).*", # Matches Tab/spaces, then anything.
+    ElementType.TEXT:".+" # All characters. A last resort.
 }
 
 """
 Inline Element regexes.
 """
 inlineExprs = {
-    LineDescriptor.LINK:"\[.*\]\(.*\)", # Matches any text enclosed by "[]()".
-    LineDescriptor.IMG:"!\[.*\]\(.*\)" # Matches LINK, with a ! prepended.
+    LinkType.LINK:"\[.*\]\(.*\)", # Matches any text enclosed by "[]()".
+    LinkType.IMAGE:"!\[.*\]\(.*\)" # Matches LINK, with a ! prepended.
 }
 
+
 """
-Determines the LineDescriptor best associated with the given string.
+Elements that should be interpreted immediately
+as an element.
+"""
+oneLiners = [
+    LinkType.LINK,
+    LinkType.IMAGE,
+    ElementType.H1,
+    ElementType.H2,
+    ElementType.H3,
+    ElementType.H4,
+]
+
+
+"""
+Determines the ElementType best associated with the given string.
 
 Parameters: 
 text: The string to evaluate.
 
 Return Value:
-classification: Of type LineDescriptor
+classification: Of type ElementType
 """
 def classifyString(text):
     for descriptor, expr in matchExprs.items():
+        print(descriptor, expr)
         if re.fullmatch(expr, text.strip()):
             return descriptor
     
     return None # If we get here, something has gone horribly wrong.
+
 
 """
 Grabs the link and alt-text from an image or link string.
@@ -89,8 +92,8 @@ altText: The alt-text in the string.
 def extractLink(text):
 
     # Check for a non-link type.
-    if (classifyString(text) != LineDescriptor.LINK and \
-        classifyString(text) != LineDescriptor.IMG):
+    if (classifyString(text) != LinkType.LINK and \
+        classifyString(text) != LinkType.IMAGE):
             return None
 
     # Grab the text inside [these brackets].
@@ -100,6 +103,40 @@ def extractLink(text):
     link = re.search("(?<=\().*(?=\))", text).group()
 
     return link, altText
+
+
+"""
+Removes all markdown from the given list of lines..
+
+Parameters:
+lineList: The string list in question.
+
+Return Value:
+lineList: TODO
+"""
+def extractText(lineList):
+    return lineList # TODO
+
+
+"""
+Creates an element from a given string list and
+appends it to the given list.
+
+Parameters:
+elementList: The list of elements to append to.
+lineList: The string list in question.
+elementType: Expects ElementType or LinkType.
+"""
+def addElement(elementList, lineList, elementType):
+    if (elementType.__class__ == LinkType):
+        # extractLink expects a line, rather than a list of lines.
+        linkInfo = extractLink(lineList[0]) 
+        newElement = LinkContainer(linkInfo[1], elementType, linkInfo[0])
+        elementList.append(newElement)
+    elif (elementType.__class__ == ElementType):
+        newElement = ElementContainer(extractText(lineList), elementType)
+        elementList.append(newElement)
+
 
 """
 Creates a list of partly-parsed ElementContainers that can be
@@ -113,66 +150,35 @@ Return Value:
 parsedList: The list of ElementContainers.
 """
 def createContainerList(inputBuffer):
-
     # Gives the parser context as to what to do with the string. 
-    previousLineType = LineDescriptor.BLANK 
-    currentLineType = LineDescriptor.BLANK
+    previousLineType = ElementType.NONE
+    currentLineType = ElementType.NONE
 
     lineList = []
     parsedList = []
 
-    linePointer = 0 # Zero-indexed line number.
-
-    while(linePointer < len(inputBuffer)):
+    for line in inputBuffer:
         previousLineType = currentLineType
-        currentLineType = classifyString(inputBuffer[linePointer])
+        currentLineType = classifyString(line)
 
-        # Figure out what to do with the current line.
-        if (currentLineType == LineDescriptor.TEXT):
-            # Add to used text, and look for
-            # a "terminator" or more lines of text.
-            lineList.append(inputBuffer[linePointer])
-            linePointer += 1
-            continue
-    
-        if (currentLineType == LineDescriptor.BLANK):
-
-            if (previousLineType == LineDescriptor.BLANK):
-                linePointer += 1
-                continue
-
-            if (previousLineType == LineDescriptor.TEXT):
-                newElement = ElementContainer(lineList, BlockType.PARAGRAPH)
-                parsedList.append(newElement)
+        if (currentLineType != previousLineType or currentLineType in oneLiners):
+            # Only add previous lines to a new element
+            # if they have text to add.
+            if (previousLineType != ElementType.NONE):
+                addElement(parsedList, extractText(lineList).copy(), previousLineType)
                 lineList.clear()
-                linePointer += 1
-                continue
 
-            if (previousLineType == LineDescriptor.QUOTE):
-                newElement = ElementContainer(lineList, BlockType.QUOTE)
-                parsedList.append(newElement)
-                lineList.clear()
-                linePointer += 1
-                continue
-
-        if (currentLineType == LineDescriptor.QUOTE):
-            lineList.append(inputBuffer[linePointer])
-            linePointer += 1
+        # Skip all blank lines.
+        if (currentLineType == ElementType.NONE):
             continue
+        else:
+            lineList.append(line)
 
-        if (currentLineType == LineDescriptor.IMG or \
-            currentLineType == LineDescriptor.LINK):
-            if (previousLineType == LineDescriptor.TEXT):
-                # Deal with it when doing inline elements.
-                lineList.append(inputBuffer[linePointer])
-                linePointer += 1
-                continue
+    # Process last element if there is any lines not terminated properly.
+    # Files should end with a newline in proper formatting.
+    if (len(lineList) > 0):
+        addElement(parsedList, extractText(lineList), previousLineType)
+        lineList.clear()
 
-            # Otherwise...
-            link, altText = extractLink(inputBuffer[linePointer])
-            parsedList.append(LinkContainer(altText, currentLineType, link))
-            linePointer += 1
-            continue
 
     return parsedList
-    
